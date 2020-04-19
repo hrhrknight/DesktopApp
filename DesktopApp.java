@@ -1,13 +1,11 @@
 import java.awt.Color;
 import java.awt.Image;
-import java.awt.MouseInfo;
 import java.awt.Graphics;
 import java.awt.Toolkit;
 import java.awt.event.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.awt.Point;
-import java.awt.image.BufferedImage;
 
 import java.awt.Font;
 import javax.swing.JFrame;
@@ -23,8 +21,6 @@ class DesktopApp extends JFrame {
     boolean is_closeButton_pressed = false;
     boolean is_movable = false;
     Point mouse_position = new Point();
-    private BufferedImage buffer;
-	private BufferedImage object;
     
     String now = new String();
 
@@ -52,9 +48,6 @@ class DesktopApp extends JFrame {
         this.addMouseListener(mListener);
         this.addMouseMotionListener(mListener);
 
-        buffer=new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_ARGB);
-		object=createObjectImage();
-
         foundamental_thread f_runnable = new foundamental_thread();
         Thread f_Thread = new Thread(f_runnable);
         f_Thread.start();
@@ -63,12 +56,7 @@ class DesktopApp extends JFrame {
         setVisible(true);
     }
     
-    private BufferedImage createObjectImage() {
-		BufferedImage img=new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_ARGB);
-		Graphics g=img.getGraphics();
 
-		return img;
-	}
 
     public void paint(Graphics g) {
         if (is_closeButton_pressed) {
@@ -149,8 +137,7 @@ class DesktopApp extends JFrame {
             while (true) {
                 Date date = new Date();
                 SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
-                //now = sdf.format(date);
-                mouse_position = MouseInfo.getPointerInfo().getLocation();
+                now = sdf.format(date);
                 repaint();
             }
         }
