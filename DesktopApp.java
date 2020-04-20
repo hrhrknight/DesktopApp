@@ -9,6 +9,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
+import java.awt.RenderingHints;
 
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -22,6 +23,7 @@ class DesktopApp extends JFrame {
     Image MainCharaImg;
     boolean is_closeButton_pressed = false;
     boolean is_movable = false;
+    boolean is_menu_mouse_hover = false;
     Point mouse_position = new Point();
     Point rltPnt = new Point();
     Point charaPnt = new Point();
@@ -29,7 +31,9 @@ class DesktopApp extends JFrame {
     BufferedImage object;
     int screenWidth, screenHeight;
     int charaWidth = 800, charaHeight = 800;
-
+    int timeFrameWidth, timeFrameHeight;
+    Point timeFramePosition;
+    int timeFrameOutline = 2;
     final int screenMargin = 1;
 
     String now = new String("This is initialized string.");
@@ -37,7 +41,9 @@ class DesktopApp extends JFrame {
     DesktopApp() {
         screenWidth = Toolkit.getDefaultToolkit().getScreenSize().width - screenMargin * 2;
         screenHeight = Toolkit.getDefaultToolkit().getScreenSize().height - screenMargin * 2;
-
+        timeFrameWidth = (int) (screenWidth * 0.2);
+        timeFrameHeight = (int) (screenHeight * 0.07);
+        timeFramePosition = new Point((int) (screenWidth * 0.75), (int) (screenHeight * 0.9));
         // set drawable windowsize
         setSize(screenWidth, screenHeight);
         // set window location
@@ -82,6 +88,10 @@ class DesktopApp extends JFrame {
         Graphics2D g2 = (Graphics2D) buffer.getGraphics();
         g2.setBackground(new Color(0, 0, 0, 0));
         g2.clearRect(0, 0, screenWidth, screenHeight);
+        drawTime();
+        if (is_menu_mouse_hover) {
+            drawMenu();
+        }
         g2.translate(0, 0);
         g2.drawImage(object, 0, 0, this);
 
@@ -92,11 +102,12 @@ class DesktopApp extends JFrame {
     }
 
     void drawTime() {
-        int timeFrameWidth = (int) (screenWidth * 0.2);
-        int timeFrameHeight = (int) (screenHeight * 0.07);
-        Point timeFramePosition = new Point((int) (screenWidth * 0.75), (int) (screenHeight * 0.9));
-        int timeFrameOutline = 2;
+
         Graphics2D g = (Graphics2D) buffer.getGraphics();
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        // 文字描画のアンチエイリアシングの有効化
+        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         g.setColor(new Color(0, 0, 255));
         g.drawRect((int) timeFramePosition.getX() - timeFrameOutline, (int) timeFramePosition.getY() - timeFrameOutline,
                 timeFrameWidth + 2 * timeFrameOutline, timeFrameHeight + 2 * timeFrameOutline);
@@ -109,6 +120,22 @@ class DesktopApp extends JFrame {
         int timeStampWidth = metrics.stringWidth(now);
         g.drawString(now, (int) (timeFramePosition.getX() + timeFrameWidth / 2 - timeStampWidth / 2),
                 (int) (timeFramePosition.getY() + timeFrameHeight / 2));
+    }
+
+    void drawMenu() {
+
+        String dev_tmp_menu_item = "Menu1";
+
+        Graphics2D g = (Graphics2D) buffer.getGraphics();
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        Font f = new Font(Font.SANS_SERIF, Font.BOLD, 25);
+        g.setFont(f);
+        g.setColor(new Color(80, 80, 255));
+        FontMetrics metrics = g.getFontMetrics(f);
+        int menuItemWidth = metrics.stringWidth(dev_tmp_menu_item);
+        g.drawString(dev_tmp_menu_item, (int)(timeFramePosition.getX() + timeFrameWidth - menuItemWidth), (int)(timeFramePosition.getY() - 10));
+
+        return;
     }
 
     public static void main(String args[]) {
@@ -171,12 +198,19 @@ class DesktopApp extends JFrame {
         public void run() {
             while (true) {
                 mouse_position = MouseInfo.getPointerInfo().getLocation();
-                drawTime();
+                if ((timeFramePosition.getX() < mouse_position.getX())
+                        && (mouse_position.getX() < timeFramePosition.getX() + timeFrameWidth)
+                        && (timeFramePosition.getY() < mouse_position.getY())
+                        && (mouse_position.getY() < timeFramePosition.getY() + timeFrameHeight)) {
+                    is_menu_mouse_hover = true;
+                } else {
+                    is_menu_mouse_hover = false;
+                }
                 repaint();
                 SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
                 now = sdf.format(Calendar.getInstance().getTime());
                 try {
-                    Thread.sleep(5l);
+                    Thread.sleep(3l);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
