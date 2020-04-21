@@ -10,10 +10,10 @@ import java.util.Calendar;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.awt.RenderingHints;
-
 import java.awt.Font;
 import java.awt.FontMetrics;
-import javax.swing.JFrame;
+
+import javax.swing.*;
 
 class DesktopApp extends JFrame {
     /**
@@ -23,7 +23,9 @@ class DesktopApp extends JFrame {
     Image MainCharaImg;
     boolean is_closeButton_pressed = false;
     boolean is_movable = false;
-    boolean is_menu_mouse_hover = false;
+    boolean is_timestamp_hover = false;
+    boolean is_menu_hover = false;
+    boolean is_menu_available = false;
     Point mouse_position = new Point();
     Point rltPnt = new Point();
     Point charaPnt = new Point();
@@ -89,7 +91,7 @@ class DesktopApp extends JFrame {
         g2.setBackground(new Color(0, 0, 0, 0));
         g2.clearRect(0, 0, screenWidth, screenHeight);
         drawTime();
-        if (is_menu_mouse_hover) {
+        if (is_menu_available) {
             drawMenu();
         }
         g2.translate(0, 0);
@@ -102,11 +104,10 @@ class DesktopApp extends JFrame {
     }
 
     void drawTime() {
-
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+        now = sdf.format(Calendar.getInstance().getTime());
         Graphics2D g = (Graphics2D) buffer.getGraphics();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-        // 文字描画のアンチエイリアシングの有効化
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         g.setColor(new Color(0, 0, 255));
         g.drawRect((int) timeFramePosition.getX() - timeFrameOutline, (int) timeFramePosition.getY() - timeFrameOutline,
@@ -133,7 +134,8 @@ class DesktopApp extends JFrame {
         g.setColor(new Color(80, 80, 255));
         FontMetrics metrics = g.getFontMetrics(f);
         int menuItemWidth = metrics.stringWidth(dev_tmp_menu_item);
-        g.drawString(dev_tmp_menu_item, (int)(timeFramePosition.getX() + timeFrameWidth - menuItemWidth), (int)(timeFramePosition.getY() - 10));
+        g.drawString(dev_tmp_menu_item, (int) (timeFramePosition.getX() + timeFrameWidth - menuItemWidth),
+                (int) (timeFramePosition.getY() - 10));
 
         return;
     }
@@ -146,40 +148,43 @@ class DesktopApp extends JFrame {
         Point ComponentPoint = new Point();
 
         public void mouseClicked(MouseEvent e) {
-            int x = e.getX(), y = e.getY();
-            if ((20 < x && x < 120) && (20 < y && y < 70)) {
+            System.out.println("mouseclicked");
+            if (is_timestamp_hover) {
                 if (e.getButton() == MouseEvent.BUTTON3)
                     System.exit(0);
             }
+
         }
 
         public void mousePressed(MouseEvent e) {
-            ComponentPoint = e.getPoint();
-            int x = e.getX(), y = e.getY();
-            if ((20 < x && x < 120) && (20 < y && y < 70)) {
-                if (e.getButton() == MouseEvent.BUTTON3) {
-                    is_closeButton_pressed = true;
-                }
-            }
-            if (e.getButton() == MouseEvent.BUTTON1) {
-                is_movable = true;
-                rltPnt.x = mouse_position.x - charaPnt.x;
-                rltPnt.y = mouse_position.y - charaPnt.y;
-            }
+
+            /*
+             * if you want to drag paint, use code below.(#1)
+             */
+            // if (e.getButton() == MouseEvent.BUTTON1) {
+            // is_movable = true;
+            // rltPnt.x = mouse_position.x - charaPnt.x;
+            // rltPnt.y = mouse_position.y - charaPnt.y;
+            // }
         }
 
         public void mouseReleased(MouseEvent e) {
             is_movable = false;
-            if (e.getButton() == MouseEvent.BUTTON3) {
-                is_closeButton_pressed = false;
-            }
         }
 
         public void mouseDragged(MouseEvent e) {
-            if (is_movable) {
-                charaPnt.x = mouse_position.x - rltPnt.x;
-                charaPnt.y = mouse_position.y - rltPnt.y;
-            }
+
+            /*
+             * (#1)
+             */
+            // if (is_movable) {
+            // charaPnt.x = mouse_position.x - rltPnt.x;
+            // charaPnt.y = mouse_position.y - rltPnt.y;
+            // }
+
+            /*
+             * if you want to drag component, use code below.
+             */
             // Point eventLocationOnScreen = new Point();
             // eventLocationOnScreen = e.getLocationOnScreen();
             // if (is_movable == true) {
@@ -198,24 +203,40 @@ class DesktopApp extends JFrame {
         public void run() {
             while (true) {
                 mouse_position = MouseInfo.getPointerInfo().getLocation();
-                if ((timeFramePosition.getX() < mouse_position.getX())
-                        && (mouse_position.getX() < timeFramePosition.getX() + timeFrameWidth)
-                        && (timeFramePosition.getY() < mouse_position.getY())
-                        && (mouse_position.getY() < timeFramePosition.getY() + timeFrameHeight)) {
-                    is_menu_mouse_hover = true;
-                } else {
-                    is_menu_mouse_hover = false;
+                is_timestamp_hover = isInBounds(mouse_position, timeFramePosition, timeFrameWidth, timeFrameHeight);
+                if (is_timestamp_hover) {
+                    is_menu_available = true;
+                }
+                if (!(isInBounds(mouse_position,
+                            new Point((int) timeFramePosition.getX(), (int) timeFramePosition.getY() - 30),
+                            new Point((int) timeFramePosition.getX() + timeFrameWidth, (int) timeFramePosition.getY() + 10))) && !is_timestamp_hover){
+                    is_menu_available = false;
                 }
                 repaint();
-                SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
-                now = sdf.format(Calendar.getInstance().getTime());
+
                 try {
-                    Thread.sleep(3l);
+                    Thread.sleep(20l);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
+
         }
+
+        private boolean isInBounds(Point objectPoint, Point lefttop, Point rightbottom) {
+            if ((lefttop.getX() < objectPoint.getX()) && (objectPoint.getX() < rightbottom.getX())
+                    && (lefttop.getY() < objectPoint.getY()) && (objectPoint.getY() < rightbottom.getY())) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        private boolean isInBounds(Point objectPoint, Point lefttop, int width, int height) {
+            Point rightbottom = new Point((int) (lefttop.getX() + width), (int) (lefttop.getY() + height));
+            return isInBounds(objectPoint, lefttop, rightbottom);
+        }
+
     }
 
 }
